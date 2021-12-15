@@ -3,6 +3,8 @@ const peakSample = require('./peak-sample');
 const truePeak = require('./true-peak');
 const utils = require('./utils');
 
+let myMeterData;
+
 const defaultConfig = {
   borderSize: 2,
   fontSize: 9,
@@ -46,8 +48,10 @@ function updateMeter(audioProcessingEvent, config, meterData) {
     channelMaxes = peakSample.calculateMaxValues(inputBuffer);
   }
   // Update peak & text values
+  let dbArr = [];
   for (let i = 0; i < channelMaxes.length; i += 1) {
     meterData.tempPeaks[i] = channelMaxes[i];
+    dbArr[i] = utils.dbFromFloat(meterData.tempPeaks[i]);
     if (channelMaxes[i] > meterData.heldPeaks[i]) {
       meterData.heldPeaks[i] = channelMaxes[i];
       if (peakHoldDuration) {
@@ -60,6 +64,13 @@ function updateMeter(audioProcessingEvent, config, meterData) {
       }
     }
   }
+  myMeterData = meterData;
+  myMeterData.channelMaxes = channelMaxes;
+  meterData.dbArr = dbArr;
+}
+
+function getMeterData() {
+  return myMeterData;
 }
 
 function createMeter(domElement, meterNode, options = {}) {
@@ -93,9 +104,11 @@ function createMeter(domElement, meterNode, options = {}) {
     meterData.heldPeaks.fill(0.0);
   }, false);
   markup.paintMeter(config, meterData);
+  myMeterData = meterData;
 }
 
 module.exports = {
   createMeterNode,
   createMeter,
+  getMeterData
 };
